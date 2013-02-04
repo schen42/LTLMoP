@@ -520,8 +520,7 @@ class SpecCompiler(object):
         to_highlight = []
         for dline in subp.stdout:
             output += dline
-
-            if "Specification is realizable" in dline:   
+            if "Specification is synthesizable!" in dline:   
                 realizable = True            
                 nonTrivial = self._autIsNonTrivial()
                 if nonTrivial:
@@ -803,6 +802,8 @@ class SpecCompiler(object):
         if self.proj.compile_options["fastslow"]:
             cmd.append("--fastslow")
 
+        cmd.append("--symbolic")
+
         subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False)
         
         realizable = False
@@ -811,9 +812,9 @@ class SpecCompiler(object):
         output = ""
         for line in subp.stdout:
             output += line
-            if "Specification is realizable" in line:
+            if "Specification is synthesizable!" in line:
                 realizable = True
-            if "Specification is realizable with slow and fast actions" in line:
+            if "Specification is synthesizable under fast/slow!" in line:
                 realizableFS = True
                
         subp.stdout.close()
