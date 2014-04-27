@@ -31,5 +31,3 @@ def get_camera_id(filename="camera_id.txt"):
     return id_
   except ValueError:
     return 0
-
-get_camera_id()
