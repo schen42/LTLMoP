@@ -13,9 +13,11 @@ extinguish, 0
 CompileOptions:
 convexify: True
 parser: structured
+symbolic: False
+use_region_bit_encoding: True
+synthesizer: jtlv
 fastslow: False
 decompose: True
-use_region_bit_encoding: True
 
 CurrentConfigName:
 Basic Simulation
@@ -30,17 +32,18 @@ Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 
 fire, 0
 person, 1
 hazardous_item, 1
+circle, 1
 
 
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
 living = p4
-deck = p7
 porch = p3
+deck = p7
+others = 
 dining = p6
 bedroom = p8
-others = 
 kitchen = p5
 
 Spec: # Specification in structured English
@@ -59,6 +62,8 @@ carrying_item is set on pick_up and reset on drop
 Do drop if and only if you are in porch and you are activating carrying_item
 
 If you did not activate carrying_item then always not porch
+
+#if you are sensing circle then stay there
 
 # Define when and how to radio
 Do radio if and only if you are sensing person
