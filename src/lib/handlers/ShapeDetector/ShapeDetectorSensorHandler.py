@@ -17,29 +17,15 @@ import logging
 class ShapeDetectorSensorHandler(handlerTemplates.SensorHandler):
     def __init__(self, executor, shared_data):
         """
-        TODO: Documentation
+        Initialize the sensor settings
         """
+		# Bind exit event
         atexit.register(self._close_socket)
-        # Read the configuration file
-        import xml.etree.ElementTree as ET
-        try:
-            calibfile = os.path.join(os.getcwd(), "lib", "handlers", "ShapeDetector", "circle_detector", "calibdata.xml")
-            tree = ET.parse(calibfile)
-            root = tree.getroot()
-            colordata = root.find('Color')
-            h = colordata.attrib['H']
-            s = colordata.attrib['S']
-            v = colordata.attrib['V']
-            if h is not None and s is not None and v is not None:
-                self.hsv_target = (h,s,v)
-            else:
-                raise Exception("Malformed input in calibdata.xml")
-        except IOError: # File does not exist
-            logging.warning("color_calibrator/calibdata.xml does not exist, using default value (h=0,s=150,v=150)")
-            self.hsv_target = (0, 150, 150)
 
+		# Indicate that the detector is starting
         self.detector_running = True
 
+		# Let the sensor listen to data
         self.ip = "127.0.0.1"
         self.port = 48484
 
@@ -47,7 +33,6 @@ class ShapeDetectorSensorHandler(handlerTemplates.SensorHandler):
         self.subprocess = multiprocessing.Process(target=detector.main, 
             kwargs={'remote_ip':self.ip, 'remote_port':self.port, 'hsv_target':self.hsv_target})
         self.subprocess.start()
-        #self.subprocess.join()
 
         # Create a thread to listen for detection result
         self.listen_thread = threading.Thread(target=self._listen_for_circles)
