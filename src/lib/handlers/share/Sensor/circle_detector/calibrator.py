@@ -3,6 +3,7 @@ import cv2.cv as cv
 import numpy as np
 import wx
 import os
+import cd_utils as utils
 from camera import get_color_mask
 
 """
@@ -48,7 +49,7 @@ class CalibratorFrame(wx.Frame):
     # and imagebitmap, which displays the image.  Attach all necessary handlers
     self.img_panel.DestroyChildren()
     self.image = wx.Image(filename, wx.BITMAP_TYPE_ANY) # image info
-    self.imageBitmap = wx.StaticBitmap(self.img_panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
+    self.imageBitmap = wx.StaticBitmap(self, wx.ID_ANY, wx.BitmapFromImage(self.image))
     wx.EVT_LEFT_DOWN(self.imageBitmap, self.image_click_handler)
     wx.EVT_LEFT_UP(self.imageBitmap, self.image_release_handler) 
     wx.EVT_MOTION(self.imageBitmap, self.image_move_handler)
@@ -59,6 +60,7 @@ class CalibratorFrame(wx.Frame):
     self.brushedImage = [[False for x in xrange(img_h)] for x in xrange(img_w)]
     # Finally, re-render
     self.box.Fit(self.img_panel)
+    self.box.RecalcSizes()
     self.img_panel.Refresh()
     self.Refresh()
 
@@ -169,7 +171,7 @@ class CalibratorFrame(wx.Frame):
   def take_picture(self, handler):
     """ Take a picture and write it to disk, for later use such as debugging.  Alternatively,
     we can load it into a wxImage after getting it into a 3D array """
-    capture = cv.CaptureFromCAM(0)
+    capture = cv.CaptureFromCAM(utils.get_camera_id())
     #http://ivtvdriver.org/index.php/Main_Page
     import time
     time.sleep(2) # Wait for the camera to turn on

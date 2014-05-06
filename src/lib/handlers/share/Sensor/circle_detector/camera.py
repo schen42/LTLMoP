@@ -131,7 +131,7 @@ def main(**kwargs):
   #triangle_detector = d.TriangleMorphDetector(30)
 
   # Camera loop
-  capture = cv.CaptureFromCAM(1)
+  capture = cv.CaptureFromCAM(utils.get_camera_id())
   import time
   time.sleep(2) # delays for 5 seconds
   while True:

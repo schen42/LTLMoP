@@ -23,7 +23,7 @@ class CircleSensorHandler(handlerTemplates.SensorHandler):
         # Read the configuration file
         import xml.etree.ElementTree as ET
         try:
-            calibfile = os.path.join(os.getcwd(), "lib", "handlers", "share", "Sensor", "color_calibrator", "calibdata.xml")
+            calibfile = os.path.join(os.getcwd(), "lib", "handlers", "share", "Sensor", "circle_detector", "calibdata.xml")
             tree = ET.parse(calibfile)
             root = tree.getroot()
             colordata = root.find('Color')
