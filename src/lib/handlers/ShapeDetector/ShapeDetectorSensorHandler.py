@@ -31,7 +31,7 @@ class ShapeDetectorSensorHandler(handlerTemplates.SensorHandler):
 
         # Create a subprocess to run the circle detector
         self.subprocess = multiprocessing.Process(target=detector.main, 
-            kwargs={'remote_ip':self.ip, 'remote_port':self.port, 'hsv_target':self.hsv_target})
+            kwargs={'remote_ip':self.ip, 'remote_port':self.port})
         self.subprocess.start()
 
         # Create a thread to listen for detection result
