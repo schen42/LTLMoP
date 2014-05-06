@@ -18,17 +18,18 @@ def int_to_bgr(value):
 def get_camera_id(filename="camera_id.txt"):
   """ Get the camera id in the file. Should be a number [0-2].  If
   there are any errors, return -1 """
+  # TODO: os.join to since path is in shared directory
   try:
     f = open(filename, 'r')
     id_ = f.readline(1) # Read a single byte
     f.close()
   except IOError:
-    id_ = -1
+    id_ = 0
 
   try:
     id_ = int(id_)
     return id_
   except ValueError:
-    return -1
+    return 0
 
 get_camera_id()
