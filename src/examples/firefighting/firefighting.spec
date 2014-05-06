@@ -39,11 +39,11 @@ circle, 1
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
 living = p4
-porch = p3
 deck = p7
-others = 
+porch = p3
 dining = p6
 bedroom = p8
+others = 
 kitchen = p5
 
 Spec: # Specification in structured English
@@ -63,14 +63,14 @@ Do drop if and only if you are in porch and you are activating carrying_item
 
 If you did not activate carrying_item then always not porch
 
-#if you are sensing circle then stay there
+If you are sensing circle and you are not activating radio then visit kitchen
 
 # Define when and how to radio
 Do radio if and only if you are sensing person
 If you are activating radio or you were activating radio then stay there
 
 # Patrol goals
-Group rooms is living, bedroom, deck, kitchen, dining
-If you are not activating carrying_item and you are not activating radio then visit all rooms
+#Group rooms is living, bedroom, deck, kitchen, dining
+#If you are not activating carrying_item and you are not activating radio then visit all rooms
 if you are activating carrying_item and you are not activating radio then visit porch
 
