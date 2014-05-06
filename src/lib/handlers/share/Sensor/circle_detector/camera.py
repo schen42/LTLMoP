@@ -130,7 +130,9 @@ def main(**kwargs):
   #triangle_detector = d.TriangleMorphDetector(30)
 
   # Camera loop
-  capture = cv.CaptureFromCAM(utils.get_camera_id())
+  cam_id = utils.get_camera_id()
+  print cam_id
+  capture = cv.CaptureFromCAM(cam_id)
   import time
   time.sleep(2) # delays for 5 seconds
   while True:
@@ -147,7 +149,7 @@ def main(**kwargs):
     #gray_img = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2GRAY) # Blurred gray image
     # Convert the image from RGB space to HSV space
     img_hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV_FULL) # Blurred HSV image
-    
+  
     mask = None
     for file_string in calib_files:
       success, h,s,v = read_xml(file_string)
