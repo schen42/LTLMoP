@@ -173,14 +173,14 @@ class MorphDetector(Detector):
       -The significant portion of time is used by suppress
       -If something is found, detect only at that scale until the object is lost (tracking)
     2. Scale suppress (heuristically, we can take the largest circles in a cluster, or k-means clusters
-      for a known number of circles such as 1)
-    3. pyrDown without gaussians """
+      for a known number of circles such as 1) """
     # 0. Reset detector flags
     self.interest_points = []
     self.exists = False
 
     # 1. Convert int8 array to float32 array to avoid overflows and get more precision
     pyramid = img.astype(np.float32)
+
     if self.best_scale is not None:
       # Pyramid is a full sized image
       # Neighbor scales

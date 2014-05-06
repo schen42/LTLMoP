@@ -3,6 +3,7 @@ import cv2.cv as cv
 import numpy as np
 import wx
 import os
+import cd_utils as utils
 from camera import get_color_mask
 
 """
@@ -48,7 +49,7 @@ class CalibratorFrame(wx.Frame):
     # and imagebitmap, which displays the image.  Attach all necessary handlers
     self.img_panel.DestroyChildren()
     self.image = wx.Image(filename, wx.BITMAP_TYPE_ANY) # image info
-    self.imageBitmap = wx.StaticBitmap(self.img_panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
+    self.imageBitmap = wx.StaticBitmap(self, wx.ID_ANY, wx.BitmapFromImage(self.image))
     wx.EVT_LEFT_DOWN(self.imageBitmap, self.image_click_handler)
     wx.EVT_LEFT_UP(self.imageBitmap, self.image_release_handler) 
     wx.EVT_MOTION(self.imageBitmap, self.image_move_handler)
@@ -59,27 +60,30 @@ class CalibratorFrame(wx.Frame):
     self.brushedImage = [[False for x in xrange(img_h)] for x in xrange(img_w)]
     # Finally, re-render
     self.box.Fit(self.img_panel)
+    self.box.RecalcSizes()
     self.img_panel.Refresh()
     self.Refresh()
 
   def save_config(self, handler):
     """ Save a configuration file which details the hue, saturation and value of the brushed area in 
-    the image """
-    print "Saving:", "H:", self.calib_h, "S:", self.calib_s, "V:", self.calib_v
+    the image into a user-specified file """
     # http://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
     config_string = ("""<CalibData><Color H=\"%d\" S=\"%d\" V=\"%d\"></Color></CalibData>""" 
       % (self.calib_h, self.calib_s, self.calib_v))
-    f = open('calibdata.xml', 'w')
-    f.write(config_string)
-    f.close()
+    dialog = wx.FileDialog(None, "Choose a file", os.getcwd(), "", "XML File (*.xml)|*.xml", wx.OPEN)
+    if dialog.ShowModal() == wx.ID_OK:
+      f = open(dialog.GetPath(), 'w')
+      f.write(config_string)
+      f.close()
+      print "Saved:", "H:", self.calib_h, "S:", self.calib_s, "V:", self.calib_v, " into", dialog.GetPath()
 
   def open_image(self, handler):
     """ Handler for open file dialog """
     wildcard = "JPEG image (*.jpg)|*.jpg| PNG image (*.png)|*.png"
     dialog = wx.FileDialog(None, "Choose a file", os.getcwd(), "", wildcard, wx.OPEN)
     if dialog.ShowModal() == wx.ID_OK:
-      print "Opening", dialog.GetFilename()
-      self.load_image(dialog.GetFilename())  
+      print "Opening", dialog.GetPath()
+      self.load_image(dialog.GetPath())  
 
   def image_click_handler(self, handler):
     """ Handler for when user pressed left mouse button.  We set a flag indicating
@@ -169,7 +173,7 @@ class CalibratorFrame(wx.Frame):
   def take_picture(self, handler):
     """ Take a picture and write it to disk, for later use such as debugging.  Alternatively,
     we can load it into a wxImage after getting it into a 3D array """
-    capture = cv.CaptureFromCAM(0)
+    capture = cv.CaptureFromCAM(utils.get_camera_id())
     #http://ivtvdriver.org/index.php/Main_Page
     import time
     time.sleep(2) # Wait for the camera to turn on
