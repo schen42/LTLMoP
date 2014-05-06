@@ -14,3 +14,21 @@ def int_to_bgr(value):
   # colorsys takes and returns values [0, 1]
   (r,g,b) = colorsys.hsv_to_rgb(value/255.0, 1, 1)
   return (255*b, 255*g, 255*r)
+
+def get_camera_id(filename="camera_id.txt"):
+  """ Get the camera id in the file. Should be a number [0-2].  If
+  there are any errors, return -1 """
+  try:
+    f = open(filename, 'r')
+    id_ = f.readline(1) # Read a single byte
+    f.close()
+  except IOError:
+    id_ = -1
+
+  try:
+    id_ = int(id_)
+    return id_
+  except ValueError:
+    return -1
+
+get_camera_id()

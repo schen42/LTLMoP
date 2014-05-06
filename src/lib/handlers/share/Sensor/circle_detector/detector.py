@@ -13,11 +13,12 @@ of several, simple detectors
 
 Possible Improvements
 =====================
--Maybe use PyCUDA (GPU_FFT for RPi) to handle floating point calculations
 -Need to pull out/generalize the pyramiding/suppression
 -Definitely need to make all the parameters tweakable
--Implement pyrDown without Gaussian shading may reduce false positives and runtime
 -Implement a wrapper to standardize the outputs for easier plugging/testing into camera.py
+-Implement this in C (At this point, trying to optimize is crazy...While loops end up being slower than
+  for loops + range() function, bitshifts end up being slower than division -- 
+  Python makes low-level optimization difficult)
 """
 
 class Detector(object):
@@ -100,6 +101,8 @@ class MorphDetector(Detector):
     self.pyramid_scale = pyramid_scale
     # The scale suppression method.  See ScaleSuppressMethod
     self.sm = sm
+    # Scale of the highest detected response (assuming one object of interest)
+    self.best_scale = None
 
   def create_filter(self):
     raise Exception("create_filter is abstract and must be implemented by the derived class")
@@ -140,8 +143,6 @@ class MorphDetector(Detector):
     result_pixels = []
     for r in range(rows - self.window_size):
       for c in range(cols - self.window_size):
-        if not isinstance(img[r + offset][c + offset], np.float32):
-          print r, c, type(img[r + offset][c + offset])
         center_response = int(img[r + offset][c + offset])
         # Ignore pixels under the threshold (optimization)
         if center_response < self.threshold:
@@ -172,24 +173,47 @@ class MorphDetector(Detector):
       -The significant portion of time is used by suppress
       -If something is found, detect only at that scale until the object is lost (tracking)
     2. Scale suppress (heuristically, we can take the largest circles in a cluster, or k-means clusters
-      for a known number of circles such as 1)
-    3. pyrDown without gaussians """
+      for a known number of circles such as 1) """
     # 0. Reset detector flags
     self.interest_points = []
     self.exists = False
 
     # 1. Convert int8 array to float32 array to avoid overflows and get more precision
     pyramid = img.astype(np.float32)
-    scale = 1
-    # 2. Convolve (actually cross-correlate) filter with the image at multiple scales of the image.  
-    # This allows us to detect different sized circles
-    while(pyramid.shape[0] > self.filter_width and pyramid.shape[1] > self.filter_width):
-      response = cv2.filter2D(pyramid, -1, self.filter, borderType=cv2.BORDER_REPLICATE)
-      self.interest_points = self.interest_points + self.suppress(response, scale)
-      scale = scale * self.pyramid_scale # Dividing image by 2
-      # Resize using nearest neighbor for speed
-      pyramid = cv2.resize(pyramid, (int(pyramid.shape[1]/self.pyramid_scale), 
-        int(pyramid.shape[0]/self.pyramid_scale)), interpolation=cv2.INTER_NEAREST)
+
+    if self.best_scale is not None:
+      # Pyramid is a full sized image
+      # Neighbor scales
+      low_scale = self.best_scale * self.pyramid_scale # Smaller image
+      high_scale = self.best_scale / self.pyramid_scale # Larger image
+
+      low = cv2.resize(pyramid, (int(pyramid.shape[1]/low_scale), 
+        int(pyramid.shape[0]/low_scale)), interpolation=cv2.INTER_NEAREST)
+      # Only suppress the low image if it's larger than the filter
+      if low.shape[0] >= self.filter_width or low.shape[1] >= self.filter_width:
+        response_l = cv2.filter2D(low, -1, self.filter, borderType=cv2.BORDER_REPLICATE)
+        self.interest_points = self.interest_points + self.suppress(response_l, low_scale)
+      # same scale
+      mid = cv2.resize(pyramid, (int(pyramid.shape[1]/self.best_scale), 
+        int(pyramid.shape[0]/self.best_scale)), interpolation=cv2.INTER_NEAREST)
+      response_m = cv2.filter2D(mid, -1, self.filter, borderType=cv2.BORDER_REPLICATE)
+      # one size higher
+      high = cv2.resize(pyramid, (int(pyramid.shape[1]/high_scale), 
+        int(pyramid.shape[0]/high_scale)), interpolation=cv2.INTER_NEAREST)
+      response_h = cv2.filter2D(high, -1, self.filter, borderType=cv2.BORDER_REPLICATE)
+      self.interest_points = (self.interest_points + self.suppress(response_m, self.best_scale) + 
+        self.suppress(response_h, high_scale))
+    else:
+      scale = 1
+      # 2. Convolve (actually cross-correlate) filter with the image at multiple scales of the image.  
+      # This allows us to detect different sized circles
+      while(pyramid.shape[0] > self.filter_width and pyramid.shape[1] > self.filter_width):
+        response = cv2.filter2D(pyramid, -1, self.filter, borderType=cv2.BORDER_REPLICATE)
+        self.interest_points = self.interest_points + self.suppress(response, scale)
+        scale = scale * self.pyramid_scale
+        # Resize using nearest neighbor for speed
+        pyramid = cv2.resize(pyramid, (int(pyramid.shape[1]/self.pyramid_scale), 
+          int(pyramid.shape[0]/self.pyramid_scale)), interpolation=cv2.INTER_NEAREST)
 
 
     # 3. Do a suppression of scales. Add the suppression type as an argument to determine best suppression method
@@ -229,6 +253,8 @@ class MorphDetector(Detector):
         if is_max:
           suppressed_points.append(p)
       self.set_interest_points(suppressed_points)
+      if len(self.interest_points) == 1:
+        self.best_scale = float(self.interest_points[0][2]) / self.filter_width
     elif self.sm == ScaleSuppressMethod.KMeans:
       # We can use this if we know that a single circle will exist, alternatively, we can write
       # the code to pass in k as a parameter vq.kmeans2
@@ -301,7 +327,7 @@ class TriangleMorphDetector(MorphDetector):
   Description
   ===========
   """
-  def __init__(self, degrees, filter_width=11, window_size=3, threshold=200, pyramid_scale=1.3, sm=ScaleSuppressMethod.NMS):
+  def __init__(self, degrees, filter_width=51, window_size=3, threshold=200, pyramid_scale=1.2, sm=ScaleSuppressMethod.NMS):
     """ The filter_width for a triangle is actually the height of the triangle.
     degrees: half the angle of the top of the triangle.  In other words, the triangle is inscribed in a square with
       a single vertex touching the midpoint of the top of the square. The degrees is the half the angle of that vertex
