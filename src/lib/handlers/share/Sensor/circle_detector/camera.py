@@ -131,7 +131,9 @@ def main(**kwargs):
   #triangle_detector = d.TriangleMorphDetector(30)
 
   # Camera loop
-  capture = cv.CaptureFromCAM(utils.get_camera_id())
+  cam_id = utils.get_camera_id()
+  print cam_id
+  capture = cv.CaptureFromCAM(cam_id)
   import time
   time.sleep(2) # delays for 5 seconds
   while True:
@@ -149,7 +151,7 @@ def main(**kwargs):
     # Convert the image from RGB space to HSV space
     img_hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV_FULL) # Blurred HSV image
     mask = get_color_mask(img_hsv, h, crange=30, low_sat=50, low_val=50)
-
+	
     if cv2.countNonZero(mask) > 0.05 * mask.shape[0] * mask.shape[1]:
       # Detect circles and draw them onto the image if there are enough pixels that are of the color
       found_circles = circle_detector.detect(mask)
