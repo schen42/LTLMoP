@@ -149,7 +149,6 @@ def main(**kwargs):
     #gray_img = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2GRAY) # Blurred gray image
     # Convert the image from RGB space to HSV space
     img_hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV_FULL) # Blurred HSV image
-
     mask = None
     for file_string in calib_files:
       success, h,s,v = read_xml(file_string)
