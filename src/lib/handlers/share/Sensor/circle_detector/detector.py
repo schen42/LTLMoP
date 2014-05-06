@@ -255,6 +255,9 @@ class MorphDetector(Detector):
       self.set_interest_points(suppressed_points)
       if len(self.interest_points) == 1:
         self.best_scale = float(self.interest_points[0][2]) / self.filter_width
+      else:
+        # Go back to full pyramiding if nothing was found
+        self.best_scale = None
     elif self.sm == ScaleSuppressMethod.KMeans:
       # We can use this if we know that a single circle will exist, alternatively, we can write
       # the code to pass in k as a parameter vq.kmeans2

@@ -86,6 +86,8 @@ def get_color_mask(img, color, crange=10, low_sat=100, high_sat=255, low_val=100
     return cv2.inRange(img, np.array([low, low_sat, low_val]), np.array([high, high_sat, high_val]))
 
 def main(**kwargs):
+  # Default files to use
+  calib_files = ['red.xml', 'lightblue.xml']
   if len(kwargs) == 0:
     # If we run it locally, load local file
     local = True
@@ -105,13 +107,10 @@ def main(**kwargs):
     else:
       raise Exception("remote port not provided")
 
-    if 'hsv_target' in kwargs:
-      h,s,v = kwargs['hsv_target']
-      h = int(h)
-      s = int(s)
-      v = int(v)
+    if 'calib_files' in kwargs:
+      calib_files = kwargs['calib_files']
     else:
-      raise Exception("hsv target not provided")
+      pass
 
     # Also set up the UDP socket
     UDP_IP = remote_ip
@@ -150,8 +149,19 @@ def main(**kwargs):
     #gray_img = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2GRAY) # Blurred gray image
     # Convert the image from RGB space to HSV space
     img_hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV_FULL) # Blurred HSV image
-    mask = get_color_mask(img_hsv, h, crange=30, low_sat=50, low_val=50)
-	
+    
+    mask = None
+    for file_string in calib_files:
+      success, h,s,v = read_xml(file_string)
+      if success:
+        this_mask = get_color_mask(img_hsv, h, crange=30, low_sat=50, low_val=50)
+        if mask is None: # The first time, just set the mask
+          mask = this_mask
+        else: # Other times, bitwise OR
+          mask = cv2.bitwise_or(mask, this_mask)
+      else:
+        raise Exception("Incorrectly formatted calibration file %s\n" % (file_string))
+
     if cv2.countNonZero(mask) > 0.05 * mask.shape[0] * mask.shape[1]:
       # Detect circles and draw them onto the image if there are enough pixels that are of the color
       found_circles = circle_detector.detect(mask)

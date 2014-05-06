@@ -66,22 +66,24 @@ class CalibratorFrame(wx.Frame):
 
   def save_config(self, handler):
     """ Save a configuration file which details the hue, saturation and value of the brushed area in 
-    the image """
-    print "Saving:", "H:", self.calib_h, "S:", self.calib_s, "V:", self.calib_v
+    the image into a user-specified file """
     # http://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
     config_string = ("""<CalibData><Color H=\"%d\" S=\"%d\" V=\"%d\"></Color></CalibData>""" 
       % (self.calib_h, self.calib_s, self.calib_v))
-    f = open('calibdata.xml', 'w')
-    f.write(config_string)
-    f.close()
+    dialog = wx.FileDialog(None, "Choose a file", os.getcwd(), "", "XML File (*.xml)|*.xml", wx.OPEN)
+    if dialog.ShowModal() == wx.ID_OK:
+      f = open(dialog.GetPath(), 'w')
+      f.write(config_string)
+      f.close()
+      print "Saved:", "H:", self.calib_h, "S:", self.calib_s, "V:", self.calib_v, " into", dialog.GetPath()
 
   def open_image(self, handler):
     """ Handler for open file dialog """
     wildcard = "JPEG image (*.jpg)|*.jpg| PNG image (*.png)|*.png"
     dialog = wx.FileDialog(None, "Choose a file", os.getcwd(), "", wildcard, wx.OPEN)
     if dialog.ShowModal() == wx.ID_OK:
-      print "Opening", dialog.GetFilename()
-      self.load_image(dialog.GetFilename())  
+      print "Opening", dialog.GetPath()
+      self.load_image(dialog.GetPath())  
 
   def image_click_handler(self, handler):
     """ Handler for when user pressed left mouse button.  We set a flag indicating
