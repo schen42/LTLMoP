@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 =====================================
-circleSensorHandler.py - Detect circles
+ShapeDetectorSensorHandler.py - Detect circles
 =====================================
 
 Enter description here
@@ -14,7 +14,7 @@ import circle_detector.camera as detector
 import lib.handlers.handlerTemplates as handlerTemplates
 import logging
 
-class CircleSensorHandler(handlerTemplates.SensorHandler):
+class ShapeDetectorSensorHandler(handlerTemplates.SensorHandler):
     def __init__(self, executor, shared_data):
         """
         TODO: Documentation
@@ -23,7 +23,7 @@ class CircleSensorHandler(handlerTemplates.SensorHandler):
         # Read the configuration file
         import xml.etree.ElementTree as ET
         try:
-            calibfile = os.path.join(os.getcwd(), "lib", "handlers", "share", "Sensor", "circle_detector", "calibdata.xml")
+            calibfile = os.path.join(os.getcwd(), "lib", "handlers", "ShapeDetector", "circle_detector", "calibdata.xml")
             tree = ET.parse(calibfile)
             root = tree.getroot()
             colordata = root.find('Color')
