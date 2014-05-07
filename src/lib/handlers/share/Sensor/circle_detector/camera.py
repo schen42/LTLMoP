@@ -5,7 +5,7 @@ import detector as d
 import cd_utils as utils
 import socket, pickle
 import time
-import sys
+import sys, os
 print "OpenCV Version:", cv2.__version__ # Code written for 2.4.6
 
 """
@@ -133,6 +133,20 @@ def main(**kwargs):
   cam_id = utils.get_camera_id()
   print cam_id
   capture = cv.CaptureFromCAM(cam_id)
+  
+  # read all HSV values at beginning, so we don't constantly open files
+  file_dir = os.path.dirname(os.path.realpath(__file__))
+  hsv_list = []
+  for file_string in calib_files:
+    success, h, s, v = read_xml(file_string)
+    if success:
+      hsv_list.append((h,s,v))
+    else:
+      raise Exception("Incorrectly formatted calibration file %s\n" % (file_string))
+  if len(hsv_list) == 0:
+    raise Exception("No files specified")
+
+
   import time
   time.sleep(2) # delays for 5 seconds
   while True:
@@ -151,16 +165,12 @@ def main(**kwargs):
     img_hsv = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV_FULL) # Blurred HSV image
   
     mask = None
-    for file_string in calib_files:
-      success, h,s,v = read_xml(file_string)
-      if success:
-        this_mask = get_color_mask(img_hsv, h, crange=30, low_sat=50, low_val=50)
-        if mask is None: # The first time, just set the mask
-          mask = this_mask
-        else: # Other times, bitwise OR
-          mask = cv2.bitwise_or(mask, this_mask)
-      else:
-        raise Exception("Incorrectly formatted calibration file %s\n" % (file_string))
+    for hsv in hsv_list:
+      this_mask = get_color_mask(img_hsv, hsv[0], crange=30, low_sat=50, low_val=50)
+      if mask is None: # The first time, just set the mask
+        mask = this_mask
+      else: # Other times, bitwise OR
+        mask = cv2.bitwise_or(mask, this_mask)
 
     if cv2.countNonZero(mask) > 0.05 * mask.shape[0] * mask.shape[1]:
       # Detect circles and draw them onto the image if there are enough pixels that are of the color
