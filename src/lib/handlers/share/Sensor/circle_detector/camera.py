@@ -138,14 +138,14 @@ def main(**kwargs):
   file_dir = os.path.dirname(os.path.realpath(__file__))
   hsv_list = []
   for file_string in calib_files:
-    success, h, s, v = read_xml(file_string)
+    # Look in current directory
+    success, h, s, v = read_xml(os.path.join(file_dir, file_string))
     if success:
       hsv_list.append((h,s,v))
     else:
       raise Exception("Incorrectly formatted calibration file %s\n" % (file_string))
   if len(hsv_list) == 0:
     raise Exception("No files specified")
-
 
   import time
   time.sleep(2) # delays for 5 seconds
