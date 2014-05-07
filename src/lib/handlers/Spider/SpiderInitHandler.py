@@ -61,7 +61,7 @@ class SpiderInitHandler(handlerTemplates.InitHandler):
                  "walk2Prepare": 5}
 
 
-    def __init__(self, executor, comPort, testing=False):
+    def __init__(self, executor, comPort):
         """
         The initialization for the Spider
 
@@ -79,11 +79,8 @@ class SpiderInitHandler(handlerTemplates.InitHandler):
             exit(-1)
 
         try:
-            if testing:
-                path = os.path.join(os.getcwd(), "TestGaitFile.txt")
-            else:
-                path = os.path.join(executor.proj.ltlmop_root, "lib", "handlers", "robots",
-                                "Spider", "SpiderGaits.txt")
+            # assuming the gaits file is in the same directory of this init handler
+            path = os.path.join(os.path.dirname(__file__), "SpiderGaits.txt")
             p = _Parser(path)
             self.gaits = p.gaits
         except:

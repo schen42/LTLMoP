@@ -397,6 +397,30 @@ class HandlerSubsystem:
 
         return pose_handler_instance.getPose(cached)
 
+    def getDefaultPropMapping(self, sensor_prop_list, actuator_prop_list):
+        """
+        Return the default proposition mapping based on the propositions given
+        """
+
+        # we need handler configs to create the default proposition mapping
+        if self.handler_configs == {}:
+            raise ValueError("Cannot get default proposition mapping. Please load all handlers first.")
+
+        prop_mapping = {}
+        for p in sensor_prop_list:
+            m = deepcopy(self.handler_configs["share"][ht.SensorHandler][0].getMethodByName("buttonPress"))
+            para = m.getParaByName("button_name")
+            para.setValue(p)
+            prop_mapping[p] = self.method2String(m, "share")
+
+        for p in actuator_prop_list:
+            m = deepcopy(self.handler_configs["share"][ht.ActuatorHandler][0].getMethodByName("setActuator"))
+            para = m.getParaByName("name")
+            para.setValue(p)
+            prop_mapping[p] = self.method2String(m, "share")
+
+        return prop_mapping
+
 
     def initializeAllMethods(self):
         """
@@ -519,12 +543,12 @@ class HandlerSubsystem:
                         h = self.prepareHandler(robot.handlers[handler_type_class])
                     # if this is a init handler, set the shared_data
                     if handler_type_class == ht.InitHandler:
-                        self.executor.proj.shared_data = h.getSharedData()
+                        self.executor.proj.shared_data.update(h.getSharedData())
             else:
                 # this is a non-main robot
-                h = self.prepareHandler(robot_config.getHandlerOfRobot(ht.InitHandler))
+                h = self.prepareHandler(robot.getHandlerOfRobot(ht.InitHandler))
                 # this is a init handler, set the shared_data
-                self.executor.proj.shared_data = h.getSharedData()
+                self.executor.proj.shared_data.update(h.getSharedData())
 
 
     def createHandlerMethodConfig(self, robot_name, handler_name, method_name, kwargs):
