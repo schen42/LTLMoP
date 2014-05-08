@@ -13,8 +13,6 @@ of several, simple detectors
 
 Possible Improvements
 =====================
--Need to pull out/generalize the pyramiding/suppression
--Definitely need to make all the parameters tweakable
 -Implement a wrapper to standardize the outputs for easier plugging/testing into camera.py
 -Implement this in C (At this point, trying to optimize is crazy...While loops end up being slower than
   for loops + range() function, bitshifts end up being slower than division -- 
@@ -80,13 +78,27 @@ class MorphDetector(Detector):
   """
   Description
   ===========
-  A morph detector applies a morphological filter (http://en.wikipedia.org/wiki/Mathematical_morphology)
+  A morph detector applies a structuring element (http://en.wikipedia.org/wiki/Mathematical_morphology)
   (i.e. a pre-defined shape) to an image at multiple scales.
+
+  The steps are as follows:
+  1. Create the filter to detect a shape in a subclass of MorphDetector
+  2. Cross-correlate (OpenCV's convolvution is actually cross-correlation) the filter independently
+  at multiple scales.  This allows us to find objects of different sizes.  Pyramid the image down 
+  to get multiple scales.  The resulting scores of the cross-correlation are the "response," which
+  represent a score for how likely an object is at that pixel. 
+  Keep only the responses above a certain [threshold].
+    2a. Suppress by finding the local maxima in every window of [window_size] in an image.  The local
+    maxima represent the likely points that contain a shape 
+  3. Now we have a set of possible objects at each scale.  Suppress over scales, that is, find the strongest
+  response over all the scales and not just one
+  4. Return the best circles.
 
   Possible Improvements
   =====================
   -See suppress and detect TODOs
   """
+
   def __init__(self, filter_width=30, window_size=3, threshold=150, pyramid_scale=2, sm=ScaleSuppressMethod.NMS):
     """ We assume that the detector will be applied to an image larger than the filter """
     super(MorphDetector, self).__init__()
@@ -278,20 +290,7 @@ class CircleMorphDetector(MorphDetector):
   """ 
   Description
   ===========
-  CircleMorphDetector uses a morphological filter and image pyramids to find circles
-  in an image.  The general steps are as follows:
-  1. Create a circular filter of arbitrary size.  A larger circle is more efficient because 
-  it requires less images, but it will only detect larger circles.
-  2. We convolve the filter at multiple scales using images that decrease in size.  The set 
-  of images is also known as an image pyramid.  This allows us to detect multiple sized 
-  selectors.  At each scale, the convolution results in an image in which each pixel 
-  contains a response (a "score").  The response indicates how likely there is a circle
-  centered at that pixel.  The higher the value, the more likely it is.
-  3. At each scale, we take only the highest responses in each area of the image that exceeds
-  a provided threshold.
-  4. We have best circles at each scale, but we can be detecting the same circle at multiple
-  scales. Thus, we run scale suppression to find the best circles along all scales.
-  5. Finally, we return the detected circles and hope they are actually circles.
+  CircleMorphDetector uses detect find circles in an image.  See detect documentation for more details
   """
   def __init__(self, filter_width=61, window_size=3, threshold=200, pyramid_scale=1.3, sm=ScaleSuppressMethod.NMS):
     """ We assume that the detector will be applied to an image larger than the filter.  Note that
@@ -369,7 +368,7 @@ class TriangleMorphDetector(MorphDetector):
 
 class CircleHoughDetector(Detector):
   """
-  Uses the
+  Uses the Hough Circle transform.  See following links for example code:
   http://stackoverflow.com/questions/7734377/cv-hough-circle-parameters-to-detect-circles
   http://stackoverflow.com/questions/10716464/what-are-the-correct-usage-parameter-values-for-houghcircles-in-opencv-for-iris
   """
@@ -378,7 +377,8 @@ class CircleHoughDetector(Detector):
 
   def detect(self, img):
     """ Returns the circles in an array of arrays. The first index of each inner array contains a tuple of 
-    the x-position, y-position and radius. """
+    the x-position, y-position and radius. The method can be improved by iterating through different values of
+    [dp] but on my computer, this makes hough slower and even more prone to false positives  """
     average = (img.shape[0] + img.shape[1]) / 2
     found_circles = cv2.HoughCircles(img, cv.CV_HOUGH_GRADIENT, dp=4, minDist=average/3, minRadius=average/10, maxRadius=average/2)
     return found_circles

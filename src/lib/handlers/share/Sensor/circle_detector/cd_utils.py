@@ -17,7 +17,8 @@ def int_to_bgr(value):
 
 def get_camera_id(filename="camera_id.txt"):
   """ Get the camera id in the file. Should be a number [0-2].  If
-  there are any errors, return -1 """
+  there are any errors, return 0 and hope that a camera is actually 
+  connected.  If there isn't, an exception will be thrown. """
   import os
   try:
     file_dir = os.path.dirname(os.path.realpath(__file__))
