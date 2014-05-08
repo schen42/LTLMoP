@@ -86,8 +86,10 @@ def get_color_mask(img, color, crange=10, low_sat=100, high_sat=255, low_val=100
     return cv2.inRange(img, np.array([low, low_sat, low_val]), np.array([high, high_sat, high_val]))
 
 def main(**kwargs):
-  # Default files to use
-  calib_files = ['red.xml', 'lightblue.xml']
+  ##############################
+  # Choose the calibration files to use
+  ##############################
+  calib_files = ['lightblue.xml']
   if len(kwargs) == 0:
     # If we run it locally, load local file
     local = True
@@ -124,7 +126,9 @@ def main(**kwargs):
   # Create a kernel for erosion and dilation (if you choose to use it)
   kernel = np.ones((5,5),np.uint8)
 
+  ##############################
   # Choose the detector
+  ##############################
   circle_detector = d.CircleMorphDetector()
   #circle_detector = d.CircleHoughDetector()
   #triangle_detector = d.TriangleMorphDetector(30)
@@ -179,8 +183,11 @@ def main(**kwargs):
       found_circles = []
     binary = mask
     mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    if found_circles is not None:
+    if found_circles is not None and len(found_circles) > 0:
       for circle in found_circles:
+        ###################################
+        # Chose what kind of circle to draw
+        ###################################
         # Morphological, the color is proportional to the intensity of the response
         cv2.circle(mask, (circle[0], circle[1]), circle[2]/2, utils.int_to_bgr(int(circle[3])))
         # Hough
