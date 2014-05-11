@@ -97,6 +97,7 @@ class MorphDetector(Detector):
   Possible Improvements
   =====================
   -See suppress and detect TODOs
+  -Instead of using window_size, use the size of the filter multiplied by the scale
   """
 
   def __init__(self, filter_width=30, window_size=3, threshold=150, pyramid_scale=2, sm=ScaleSuppressMethod.NMS):
