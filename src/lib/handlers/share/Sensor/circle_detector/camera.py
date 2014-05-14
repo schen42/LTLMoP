@@ -20,6 +20,8 @@ other relevant image pre-processing to improve object detection rate.
 
 NOTE: If running this on a robot / not debugging, don't forget to remove the displays (unnecessary overhead)
 
+Currently only detects circles
+
 Possible Improvements
 =====================
 -Protection against malicious inputs
@@ -91,12 +93,7 @@ def main(**kwargs):
   ##############################
   calib_files = ['lightblue.xml']
   if len(kwargs) == 0:
-    # If we run it locally, load local file
     local = True
-    # Read the calibration file
-    read_success, h, s, v = read_xml()
-    if not read_success:
-      raise Exception("Couldn't read calibration file (calibdata.xml)")
   else:
     # Get the host/port of the remote to send back data
     if 'remote_ip' in kwargs:
@@ -130,8 +127,6 @@ def main(**kwargs):
   # Choose the detector
   ##############################
   circle_detector = d.CircleMorphDetector()
-  #circle_detector = d.CircleHoughDetector()
-  #triangle_detector = d.TriangleMorphDetector(30)
 
   # Camera loop
   cam_id = utils.get_camera_id()
@@ -186,12 +181,10 @@ def main(**kwargs):
     if found_circles is not None and len(found_circles) > 0:
       for circle in found_circles:
         ###################################
-        # Chose what kind of circle to draw
+        # Chose what kind of shape to draw
         ###################################
         # Morphological, the color is proportional to the intensity of the response
         cv2.circle(mask, (circle[0], circle[1]), circle[2]/2, utils.int_to_bgr(int(circle[3])))
-        # Hough
-        #cv2.circle(mask, (int(circle[0][0]), int(circle[0][1])), int(circle[0][2]), (0, 255, 0))
     if not local:
       serialized = pickle.dumps(found_circles)
       if sys.getsizeof(serialized) > 1024:
@@ -202,11 +195,6 @@ def main(**kwargs):
     # Uncomment the next two lines if you want to attempt to remove noise
     #mask = cv2.erode(mask, kernel, iterations=2)
     #mask = cv2.dilate(mask, kernel, iterations=2)
-    '''found_triangles = triangle_detector.detect(binary)
-    if found_triangles is not None:
-      for circle in found_triangles:
-        # Morphological, the color is proportional to the intensity of the response
-        cv2.circle(mask, (circle[0], circle[1]), circle[2]/2, utils.int_to_bgr(int(circle[3])))'''
 
     cv.ShowImage("Mask", cv.fromarray(mask))
     if cv.WaitKey(10) == 27:

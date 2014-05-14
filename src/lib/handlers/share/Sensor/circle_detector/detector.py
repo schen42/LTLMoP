@@ -103,18 +103,28 @@ class MorphDetector(Detector):
   def __init__(self, filter_width=30, window_size=3, threshold=150, pyramid_scale=2, sm=ScaleSuppressMethod.NMS):
     """ We assume that the detector will be applied to an image larger than the filter """
     super(MorphDetector, self).__init__()
-    # The width of the filter, to be used in determining number of images in the pyramid, etc.
+    # The width of the filter, which effectively is the smallest shape you can detect in pixels.
+    # It also determines number of images in the pyramid (since we divide the pyramid until the filter can no longer
+    # fit into the image).  Increasing the filter width may increase performance at the expense of being
+    # unable to find smaller images.
     self.filter_width = filter_width
-    # The square window, mainly used in suppression
+    # The square window, mainly used in suppression.  For example, a window_size of 3 means that you will find
+    # a local maximum in every 3x3 area.  Increasing the window size may throw away circles that have lower scores
+    # due to noise, but remove overlapping circles.
     self.window_size = window_size
-    # The response threshold. Values below the threshold are ignored.  Should be [0-255]
+    # The response threshold. Values below the threshold are ignored.  This value is dependent entirely
+    # on how the filter is created.  To determine the threshold, determine the minimum and maximum values 
+    # one can get if cross correlating the filter with a patch in the image and the
     self.threshold = threshold
     # The scaling of the images in the pyramid.  For example, a scale of 2 means divide an image
     # in half for every successive pyramid application
     self.pyramid_scale = pyramid_scale
-    # The scale suppression method.  See ScaleSuppressMethod
+    # The scale suppression method.  See ScaleSuppressMethod.  Currently not in use.  If you end up using
+    # KMeans suppression, you may be able to skip suppression entirely, and simply compute the centroids
     self.sm = sm
-    # Scale of the highest detected response (assuming one object of interest)
+    # Scale of the highest detected response (assuming one object of interest).  This is used for the
+    # sliding scale heuristic in which we take the best scale, and the two scales higher and lower so 
+    # that we do not have to pyramid the whole image.
     self.best_scale = None
 
   def create_filter(self):
@@ -293,12 +303,14 @@ class CircleMorphDetector(MorphDetector):
   ===========
   CircleMorphDetector uses detect find circles in an image.  See detect documentation for more details
   """
-  def __init__(self, filter_width=61, window_size=3, threshold=200, pyramid_scale=1.3, sm=ScaleSuppressMethod.NMS):
+  def __init__(self, filter_width=61, window_size=5, threshold=200, pyramid_scale=1.3, sm=ScaleSuppressMethod.NMS):
     """ We assume that the detector will be applied to an image larger than the filter.  Note that
     the filter width is equal to the diameter of the circle 
     filter_with: The diameter of the circle """
     if filter_width % 2 == 0 or filter_width < 3:
       raise Exception("Filter width needs to be an odd number larger than 3")
+    if pyramid_scale <= 1:
+      raise Exception("pyramid_scale needs to be strictly greater than 1")
     super(CircleMorphDetector, self).__init__(filter_width, window_size, threshold, pyramid_scale, sm)
     self.filter = self.create_filter(filter_width)
 

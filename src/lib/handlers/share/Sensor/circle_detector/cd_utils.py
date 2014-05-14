@@ -4,7 +4,7 @@ Utility functions used by the color and object detection code
 
 def in_bounds(h, w, r, c):
   """ Given the height, width, row/column coordinates, determine
-  if the coordinates """
+  if the coordinates are in bounds """
   return r >= 0 and r < h and w >= 0 and c < w
 
 def int_to_bgr(value):

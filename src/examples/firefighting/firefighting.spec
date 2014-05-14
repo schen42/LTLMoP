@@ -32,7 +32,7 @@ Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 
 fire, 0
 person, 1
 hazardous_item, 1
-circle, 1
+shape, 1
 
 
 ======== SPECIFICATION ========
@@ -63,7 +63,7 @@ Do drop if and only if you are in porch and you are activating carrying_item
 
 If you did not activate carrying_item then always not porch
 
-If you are sensing circle and you are not activating radio then visit kitchen
+If you are sensing shape and you are not activating radio then visit kitchen
 
 # Define when and how to radio
 Do radio if and only if you are sensing person
