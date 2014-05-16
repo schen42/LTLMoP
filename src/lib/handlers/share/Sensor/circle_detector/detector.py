@@ -185,7 +185,7 @@ class MorphDetector(Detector):
 
   def detect(self, img):
     """
-    img: a binary image with the filtered colors. Note that opencv images are row-first ordered
+    img: a BINARY IMAGE with the filtered colors. Note that opencv images are row-first ordered
     pyramid_scale: the granularity of the image pyramid.
     returns an array of the features with the highest response.
 

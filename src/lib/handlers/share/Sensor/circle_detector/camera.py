@@ -27,66 +27,6 @@ Possible Improvements
 -Protection against malicious inputs
 """
 
-def read_xml(filename="calibdata.xml"):
-  """ Read the configuration file """
-  import xml.etree.ElementTree as ET
-  tree = ET.parse(filename)
-  root = tree.getroot()
-  colordata = root.find('Color')
-  if colordata is not None:
-    # Minimal handling for malformed/malicious inputs
-    h = colordata.attrib['H']
-    s = colordata.attrib['S']
-    v = colordata.attrib['V']
-    if h is not None and s is not None and v is not None:
-      return True, int(h), int(s), int(v)
-  return False, 0, 0, 0 
-
-
-def get_color_mask(img, color, crange=10, low_sat=100, high_sat=255, low_val=100, high_val=255):
-  """
-      Turn an image into a binary mask (0, 255) where the pixel is 1 if it is within the provided
-      color threshold and 0 otherwise.
-
-      img: an 8 bit (by default) numpy array with HSV values. 8-bit means that the range of H 
-          is [0-255].  Note: HSV range is [0-180], and afterwards, it repeats
-          HSV_FULL range is [0-255] with no repeats.  This is achieved by multiplying by 255/180
-          We will use FULL_RANGE
-      color: a hue in the range [0, 255]
-      range: the precision/width of the hue detection.  A higher value produces more detected values
-          but more false positives [0, 255]
-      low_sat, high_sat: The desired range for saturation [0-255]. Not a centered value to provide
-        more flexibility with saturation and value 
-      low_val, high_val: The desired range for value/brightness [0-255]
-  """
-  # 0. Validate Inputs
-  assert (crange > 1 and crange <= 360 and low_sat > 0 and high_sat > low_sat and low_val > 0 
-  and high_val > low_val and high_sat <= 255 and high_val <= 255)
-
-  # 1. Calculate the range of the hue and make sure it remains in the range [0, 255].
-  # Also determine if the range has wrapped around
-  # (this will happen with red, which can be at both the 0 and 255 ends of the spectrum). 
-  low = color - int(crange/2)
-  high = color + int(crange/2)
-  wrapped = False
-  if low < 0:
-    wrapped = True
-    low += 255
-  elif high > 255:
-    wrapped = True
-    high -= 255
-  if wrapped:
-    low, high = high, low
-  assert high >= low
-
-  # 2. inRange Mask. If it wrapped, we need to apply inRange twice to capture both ends of the spectrum
-  if (wrapped):
-    mask1 = cv2.inRange(img, np.array([0, low_sat, low_val]), np.array([low, high_sat, high_val]))
-    mask2 = cv2.inRange(img, np.array([high, low_sat, low_val]), np.array([255, high_sat, high_val]))
-    return cv2.bitwise_or(mask1, mask2)
-  else:
-    return cv2.inRange(img, np.array([low, low_sat, low_val]), np.array([high, high_sat, high_val]))
-
 def main(**kwargs):
   ##############################
   # Choose the calibration files to use
@@ -138,7 +78,7 @@ def main(**kwargs):
   hsv_list = []
   for file_string in calib_files:
     # Look in current directory
-    success, h, s, v = read_xml(os.path.join(file_dir, file_string))
+    success, h, s, v = utils.read_xml(os.path.join(file_dir, file_string))
     if success:
       hsv_list.append((h,s,v))
     else:
@@ -165,7 +105,7 @@ def main(**kwargs):
   
     mask = None
     for hsv in hsv_list:
-      this_mask = get_color_mask(img_hsv, hsv[0], crange=30, low_sat=50, low_val=50)
+      this_mask = utils.get_color_mask(img_hsv, hsv[0], crange=30, low_sat=50, low_val=50)
       if mask is None: # The first time, just set the mask
         mask = this_mask
       else: # Other times, bitwise OR
